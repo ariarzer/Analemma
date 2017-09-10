@@ -137,10 +137,8 @@ int main ()
         V = 2 * atan(sqrt ((1 + e)/(1 - e)) * tan (E / 2));
         ecl.fi = 0;
         ecl.lam = grad(V) + TVR;
-        ecv.fi = eklipicToEcvator(ecl).fi;
-        ecv.lam = eklipicToEcvator(ecl).lam;
-        hor.fi = ecvatorToHorisont(ecv, time, t).fi;
-        hor.lam = ecvatorToHorisont(ecv, time, t).lam;
+        ecv = eklipicToEcvator(ecl);
+        hor = ecvatorToHorisont(ecv, time, t);
         fprintf(f, "%f %f \n", hor.fi, hor.lam);
 //        fprintf(f, "%f %f \n", ecv.fi, ecv.lam);
     }
