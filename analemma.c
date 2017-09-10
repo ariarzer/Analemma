@@ -127,6 +127,8 @@ int main ()
     E = 0;
     V = 0;
     FILE * f = fopen("analemma.dat","w");
+    double r360=0;
+    double lamprev=0;
     for( t = 1; t < T+1 ; t++ )
     {
         M = (2 * PI * t / T);
@@ -139,7 +141,13 @@ int main ()
         ecl.lam = grad(V) + TVR;
         ecv = eklipicToEcvator(ecl);
         hor = ecvatorToHorisont(ecv, time, t);
-        fprintf(f, "%f %f \n", hor.fi, hor.lam);
+        printf("%f %f \n", hor.lam,lamprev);
+        if((t!=1)&&(fabs(hor.lam-lamprev)>180))
+        {
+        	r360+=360*(hor.lam-lamprev>0?-1:1);
+        }
+        lamprev=hor.lam;
+        fprintf(f, "%f %f \n", hor.fi, hor.lam+r360);
 //        fprintf(f, "%f %f \n", ecv.fi, ecv.lam);
     }
     fclose (f);
