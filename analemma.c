@@ -63,7 +63,7 @@ Bas RotBasMult (Rot rot, Bas bas)
 {
     Bas result;
     result.b11 = rot.a11 * bas.b11 + rot.a12 * bas.b21 + rot.a13 * bas.b31;
-    result.b21 = rot.a21 * bas.b21 + rot.a22 * bas.b21 + rot.a23 * bas.b31;
+    result.b21 = rot.a21 * bas.b11 + rot.a22 * bas.b21 + rot.a23 * bas.b31;
     result.b31 = rot.a31 * bas.b11 + rot.a32 * bas.b21 + rot.a33 * bas.b31;
     return result;
 }
@@ -71,18 +71,19 @@ Bas RotBasMult (Rot rot, Bas bas)
 double equationOfTime(double date)
 {
     double E, B;
-    B = 2. * PI * sin(date / T);
+    B = 2. * PI * (date-81) / T;
     E = 7.53 * cos(B) + 1.5 * sin(B) - 9.87 * sin(2 * B);
     return E;
 }
 
 double S(double time, double date)
 {
-    double S;
-    S = time + 24. * date / T + equationOfTime(date) / 60. + 12;
-    if (S > 12) S = S - 24;
-    S = S * 360. / 24.;
-    return S;
+    double Ss;
+    printf("date=%lf\n",date);    
+    Ss = time + 24. * date / T + equationOfTime(date) / 60. + 12;
+    if (Ss > 12) Ss = Ss - 24;
+    Ss = Ss * 360. / 24.;
+    return Ss;
 }
 
 coord eklipicToEcvator(coord ecl)
@@ -100,18 +101,26 @@ coord ecvatorToHorisont(coord ecv, double time, double date)
 {
     coord horisont;
     coord tmp;
-
-    tmp.fi =   asin(RotBasMult(Rz(S(time, date)), basis(ecv)).b31);
-    tmp.lam = atan2(RotBasMult(Rz(S(time, date)), basis(ecv)).b21 / cos(tmp.fi),
-                    RotBasMult(Rz(S(time, date)), basis(ecv)).b11 / cos(tmp.fi));
+    printf("date=%lf\n",date);    
+    double s=S(time, date);
+    printf("s=%lf\n",s);  
+    Rot Rzs=Rz(s);
+    Bas bs=basis(ecv);
+    printf("bs=%lf %lf %lf\n",bs.b11,bs.b21,bs.b31);  
+    Bas RBM=RotBasMult(Rzs, bs);
+    printf("RBM=%lf %lf %lf\n",RBM.b11,RBM.b21,RBM.b31);  
+    tmp.fi =   asin(RBM.b31);
+    tmp.lam = atan2(RBM.b21 / cos(tmp.fi),
+                    RBM.b11 / cos(tmp.fi));
     tmp.fi =  grad(tmp.fi);
     tmp.lam = grad(tmp.lam);
-
+    printf("lam=%lf fi=%lf\n",tmp.lam,tmp.fi);  
     horisont.fi =   asin(RotBasMult(Ry((90 - latitude)), basis(tmp)).b31);
     horisont.lam = atan2(RotBasMult(Ry((90 - latitude)), basis(tmp)).b21 / cos(horisont.fi),
                          RotBasMult(Ry((90 - latitude)), basis(tmp)).b11 / cos(horisont.fi));
     horisont.fi =  grad(horisont.fi);
     horisont.lam = grad(horisont.lam);
+    printf("az=%lf h=%lf\n",horisont.lam,horisont.fi);  
 
     return tmp;
 }
@@ -129,8 +138,10 @@ int main ()
     FILE * f = fopen("analemma.dat","w");
     double r360=0;
     double lamprev=0;
-    for( t = 1; t < T+1 ; t++ )
+   for( t = 1; t < T+1 ; t++ )
+//    for( t = 1; t < 20 ; t++ )
     {
+    	printf("t=%d\n",t);
         M = (2 * PI * t / T);
         for( j = 0; j < 2000; j++ )
         {
@@ -140,6 +151,7 @@ int main ()
         ecl.fi = 0;
         ecl.lam = grad(V) + TVR;
         ecv = eklipicToEcvator(ecl);
+    	printf("t=%d\n",t);
         hor = ecvatorToHorisont(ecv, time, t);
         printf("%f %f \n", hor.lam,lamprev);
         if((t!=1)&&(fabs(hor.lam-lamprev)>180))
