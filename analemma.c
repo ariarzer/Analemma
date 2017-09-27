@@ -63,7 +63,7 @@ Bas RotBasMult (Rot rot, Bas bas)
 {
     Bas result;
     result.b11 = rot.a11 * bas.b11 + rot.a12 * bas.b21 + rot.a13 * bas.b31;
-    result.b21 = rot.a21 * bas.b21 + rot.a22 * bas.b21 + rot.a23 * bas.b31;
+    result.b21 = rot.a21 * bas.b11 + rot.a22 * bas.b21 + rot.a23 * bas.b31;
     result.b31 = rot.a31 * bas.b11 + rot.a32 * bas.b21 + rot.a33 * bas.b31;
     return result;
 }
@@ -101,15 +101,17 @@ coord ecvatorToHorisont(coord ecv, double time, double date)
     coord horisont;
     coord tmp;
 
-    tmp.fi =   asin(RotBasMult(Rz(S(time, date)), basis(ecv)).b31);
-    tmp.lam = atan2(RotBasMult(Rz(S(time, date)), basis(ecv)).b21 / cos(tmp.fi),
-                    RotBasMult(Rz(S(time, date)), basis(ecv)).b11 / cos(tmp.fi));
+    Bas fi1 = RotBasMult(Rz(S(time, date)), basis(ecv));
+
+    tmp.fi =   asin(fi1.b31);
+    tmp.lam = atan2(fi1.b21 / cos(tmp.fi), fi1.b11 / cos(tmp.fi));
     tmp.fi =  grad(tmp.fi);
     tmp.lam = grad(tmp.lam);
 
-    horisont.fi =   asin(RotBasMult(Ry((90 - latitude)), basis(tmp)).b31);
-    horisont.lam = atan2(RotBasMult(Ry((90 - latitude)), basis(tmp)).b21 / cos(horisont.fi),
-                         RotBasMult(Ry((90 - latitude)), basis(tmp)).b11 / cos(horisont.fi));
+    fi1 = RotBasMult(Ry((90 - latitude)), basis(tmp));
+
+    horisont.fi =   asin(fi1.b31);
+    horisont.lam = atan2(fi1.b21 / cos(horisont.fi), fi1.b11 / cos(horisont.fi));
     horisont.fi =  grad(horisont.fi);
     horisont.lam = grad(horisont.lam);
 
@@ -127,6 +129,8 @@ int main ()
     E = 0;
     V = 0;
     FILE * f = fopen("analemma.dat","w");
+    double r360 = 0;
+    double lamprev = 0;
     for( t = 1; t < T+1 ; t++ )
     {
         M = (2 * PI * t / T);
@@ -137,12 +141,15 @@ int main ()
         V = 2 * atan(sqrt ((1 + e)/(1 - e)) * tan (E / 2));
         ecl.fi = 0;
         ecl.lam = grad(V) + TVR;
-        ecv.fi = eklipicToEcvator(ecl).fi;
-        ecv.lam = eklipicToEcvator(ecl).lam;
-        hor.fi = ecvatorToHorisont(ecv, time, t).fi;
-        hor.lam = ecvatorToHorisont(ecv, time, t).lam;
-        fprintf(f, "%f %f \n", hor.fi, hor.lam);
-//        fprintf(f, "%f %f \n", ecv.fi, ecv.lam);
+        ecv = eklipicToEcvator(ecl);
+        hor = ecvatorToHorisont(ecv, time, t);
+        printf("%f %f \n", hor.lam,lamprev);
+        if((t != 1) && (fabs(hor.lam - lamprev) > 180))
+        {
+            r360 += 360 * (hor.lam - lamprev > 0 ? -1 : 1);
+        }
+        lamprev = hor.lam;
+        fprintf(f, "%f %f \n", hor.fi, hor.lam + r360);
     }
     fclose (f);
     return 0;

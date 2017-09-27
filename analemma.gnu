@@ -6,6 +6,6 @@ set terminal png
 #set yrange [-1.2:1.2]
 set xzeroaxis 
 set yzeroaxis 
-set output 'analemmar.png' 
+set output 'analemma.png' 
 plot "analemma.dat" u ($2/1):($1/1) w l  notitle
 pause -1
