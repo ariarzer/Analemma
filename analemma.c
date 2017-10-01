@@ -71,7 +71,7 @@ Bas RotBasMult (Rot rot, Bas bas)
 double equationOfTime(double date)
 {
     double E, B;
-    B = 2. * PI * sin(date / T);
+    B = 2. * PI * (date / T);
     E = 7.53 * cos(B) + 1.5 * sin(B) - 9.87 * sin(2 * B);
     return E;
 }
