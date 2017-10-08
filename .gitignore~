@@ -1,5 +1,5 @@
 *.user*
-*?.dat
+*.dat
 analemma.exe
 analemma.png
 a.out
