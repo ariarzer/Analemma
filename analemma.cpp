@@ -1,5 +1,7 @@
 #include <math.h>
 #include <stdio.h>
+#include <iostream>
+#include <sstream>
 
 const double PI = 3.141592;
 const double epsilon = 23.43;
@@ -16,13 +18,19 @@ typedef struct coord {double fi; double lam;} coord;
 
 double rad(double A)
 {
-    double result = A * PI / 180.;
-    return result;
+    return A * PI / 180.;
 }
 
 double grad(double A)
 {
-    double result = A * 180. / PI;
+    return A * 180. / PI;
+}
+
+coord grad(coord A)
+{
+    coord result;
+    result.fi = grad(A.fi);
+    result.lam = grad(A.lam);
     return result;
 }
 
@@ -53,9 +61,11 @@ Rot Rz(double a)
 Bas basis(coord cord)
 {
     Bas result;
-    result.b11 = cos(rad(cord.fi)) * cos(rad(cord.lam));
-    result.b21 = cos(rad(cord.fi)) * sin(rad(cord.lam));
-    result.b31 = sin(rad(cord.fi));
+    double cgf = rad(cord.fi);
+    double cgl = rad(cord.lam);
+    result.b11 = cos(cgf) * cos(rad(cord.lam));
+    result.b21 = cos(cgf) * sin(rad(cord.lam));
+    result.b31 = sin(cgf);
     return result;
 }
 
@@ -88,9 +98,11 @@ double S(double time, double date)
 coord eklipicToEcvator(coord ecl)
 {
     coord ecv;
-    ecv.fi =   asin(RotBasMult(Rx(epsilon), basis(ecl)).b31);
-    ecv.lam = atan2(RotBasMult(Rx(epsilon), basis(ecl)).b21 / cos(ecv.fi),
-                    RotBasMult(Rx(epsilon), basis(ecl)).b11 / cos(ecv.fi));
+
+    Bas fi1 = RotBasMult(Rx(epsilon), basis(ecl));
+
+    ecv.fi =   asin(fi1.b31);
+    ecv.lam = atan2(fi1.b21 / cos(ecv.fi), fi1.b11 / cos(ecv.fi));
     ecv.fi =  grad(ecv.fi);
     ecv.lam = grad(ecv.lam);
     return ecv;
@@ -115,8 +127,29 @@ coord ecvatorToHorisont(coord ecv, double time, double date)
     horisont.fi =  grad(horisont.fi);
     horisont.lam = grad(horisont.lam);
 
-    return tmp;
+    return horisont;
 }
+
+void GnuOut(FILE *f, int time){
+    fprintf(f, "#set size ratio 1 \n");
+    fprintf(f, "set terminal png size 2000,900  font "",20"" \n");
+    fprintf(f, "#set autoscale fix \n");
+    fprintf(f, "set xzeroaxis \nset yzeroaxis \n");
+    fprintf(f, "#set terminal png\n");
+    fprintf(f, "#set xrange [-1.2:1.2] \n#set yrange [-1.2:1.2]\n");
+//    fprintf(f, "set output 'analemma%d.png' \n", time);
+    fprintf(f, "set output 'analemma.png' \n");
+    fprintf(f, "plot ");
+    }
+
+void GnuOut1(FILE *f, int time){
+    fprintf(f, "'analemma%d.dat' u ($2/1):($1/1) w l  notitle, ", time);
+    }
+
+void GnuOut(FILE *f){
+    fprintf(f,"\n");
+    fprintf(f,"pause -1");
+    }
 
 int main ()
 {
@@ -128,30 +161,40 @@ int main ()
     TVR = 102;
     E = 0;
     V = 0;
-    FILE * f = fopen("analemma.dat","w");
+    FILE * fp = fopen("analemma.gnu","w");
+
+    GnuOut(fp, time);
     double r360 = 0;
     double lamprev = 0;
-    for( t = 1; t < T+1 ; t++ )
+    for(time = 0; time < 24; time++)
     {
-        M = (2 * PI * t / T);
-        for( j = 0; j < 2000; j++ )
+        std::stringstream filename;
+        filename<<"analemma"<<time<<".dat";
+        FILE * f = fopen(filename.str().c_str(),"w");
+        GnuOut1(fp,time);
+        for( t = 1; t < T+1 ; t++ )
         {
-            E = E - ((E - e * sin(E) - M)/(1 - e * cos(E)));
+            M = (2 * PI * t / T);
+            for( j = 0; j < 200; j++ )
+            {
+                E = E - ((E - e * sin(E) - M)/(1 - e * cos(E)));
+            }
+            V = 2 * atan(sqrt ((1 + e)/(1 - e)) * tan (E / 2));
+            ecl.fi = 0;
+            ecl.lam = grad(V) + TVR;
+
+            ecv = eklipicToEcvator(ecl);
+            hor = ecvatorToHorisont(ecv, time, t);
+            printf("%f %f \n", hor.lam,lamprev);
+            if((t != 1) && (fabs(hor.lam - lamprev) > 180))
+                r360 += 360 * (hor.lam - lamprev > 0 ? -1 : 1);
+            lamprev = hor.lam;
+            fprintf(f, "%f %f \n", hor.fi, hor.lam + r360);
         }
-        V = 2 * atan(sqrt ((1 + e)/(1 - e)) * tan (E / 2));
-        ecl.fi = 0;
-        ecl.lam = grad(V) + TVR;
-        ecv = eklipicToEcvator(ecl);
-        hor = ecvatorToHorisont(ecv, time, t);
-        printf("%f %f \n", hor.lam,lamprev);
-        if((t != 1) && (fabs(hor.lam - lamprev) > 180))
-        {
-            r360 += 360 * (hor.lam - lamprev > 0 ? -1 : 1);
-        }
-        lamprev = hor.lam;
-        fprintf(f, "%f %f \n", hor.fi, hor.lam + r360);
+        fclose (f);
     }
-    fclose (f);
+    GnuOut(fp);
+    fclose (fp);
     return 0;
 }
 
