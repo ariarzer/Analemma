@@ -126,7 +126,7 @@ int generateGnuScript(std::string filename, int number,
                       int sizex_image, int sizey_image, int size_font,
                       int sizex_diagramm_from, int sizex_diagramm_to,
                       int sizey_diagramm_from , int sizey_diagramm_to,
-                      std::string xlabel, std::string ylabel ,
+                      std::string xlabel, std::string ylabel,
                       std::string title )
 {
     std::ofstream file((filename + ".gnu"), std::ios_base::out);
