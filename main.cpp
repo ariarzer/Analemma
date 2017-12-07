@@ -15,7 +15,8 @@ int main ()
     double r360 = 0;
     double lamprev = 0;
 
-    generateGnuScript("analemma", 1);
+    generateGnuScript("analemma", 1, 1000, 800, 12, 0, 0, 0, 0,
+                      "Right ascension", "Decline", "Analemma in the horizontal coordinate system");
 
     std::ofstream file(("analemma.dat"), std::ios_base::out);
     if (!file.is_open())
@@ -41,7 +42,7 @@ int main ()
             r360 += 360 * (hor.lam - lamprev > 0 ? -1 : 1);
         lamprev = hor.lam;
 
-        file <<  hor.fi << ' ' <<  hor.lam + r360 << std::endl;
+        file <<  hor.lam << ' ' <<  hor.fi + r360 << std::endl;
     }
     file.close();
     return 0;

@@ -151,10 +151,11 @@ int generateGnuScript(std::string filename, int number,
     if (title != "")
         file << "set title '" << title << "'" << std::endl << std::endl;
     for (int i = 0; i < number ; i++)
-        file << "set output '" << (filename + ".png") << std::endl
-             << "plot " << (filename + ".dat") << " u ($" << (i + 1) << "/1):($" << (i + 2) << "1) w l  notitle" << std::endl;
-    file << "set output '" << (filename + ".png") << std::endl
-         << "plot " << (filename + ".dat") << " u ($" << (1) << "/1):($" << (2) << "1) w l  notitle" << std::endl;
+    {
+        file << "set output '" << (filename + ".png") << "'" << std::endl
+             << "plot " << ("'" + filename + ".dat" + "'")
+             << " u ($" << (i + 1) << "/1):($" << (i + 2) << "/1) w l  notitle" << std::endl;
+    }
     file << "pause -1";
     file.close();
     return 0;
