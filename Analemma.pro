@@ -4,7 +4,12 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 SOURCES += \
+    main.cpp \
     analemma.cpp
+    analemma.cpp
+    analemma.h
 
-HEADERS +=
+HEADERS += \
+    analemma.h \
+    stdafx.h
 
