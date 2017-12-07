@@ -1,4 +1,5 @@
 *.user
+*.dat
 analemma.exe
 analemma.png
 build/
