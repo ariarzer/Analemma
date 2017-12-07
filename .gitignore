@@ -1,4 +1,5 @@
 *.user
+*~
 analemma.exe
 analemma.png
 build/
